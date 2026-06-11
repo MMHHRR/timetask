@@ -1,0 +1,14 @@
+services:
+  timetask:
+    image: timetask:latest
+    container_name: timetask
+    ports:
+      - "5000:5000"
+    volumes:
+      - timetask_data:/app/backend
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+
+volumes:
+  timetask_data:

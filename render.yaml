@@ -1,0 +1,15 @@
+# Render 部署配置
+services:
+  - type: web
+    name: timetask
+    env: python
+    buildCommand: pip install -r backend/requirements.txt gunicorn
+    startCommand: gunicorn --chdir backend --bind 0.0.0.0:10000 --workers 2 --access-logfile - app:app
+    healthCheckPath: /
+    disk:
+      name: data
+      mountPath: /app/backend
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
