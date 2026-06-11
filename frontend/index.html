@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#4A90D9">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>TimeTask · 日历任务</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📅</text></svg>">
+    <link rel="stylesheet" href="css/style.css">
+    <!-- GSAP 动画引擎 -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+    <!-- Lucide 图标库 -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+
+<!-- ─── 顶部导航 ─── -->
+<header id="app-header">
+    <button id="btn-today" class="icon-btn" title="回到今天"><i data-lucide="calendar"></i></button>
+    <button id="btn-prev" class="icon-btn"><i data-lucide="chevron-left"></i></button>
+    <h2 id="month-label">2026年 6月</h2>
+    <button id="btn-next" class="icon-btn"><i data-lucide="chevron-right"></i></button>
+    <button id="btn-add" class="icon-btn add-btn" title="添加任务"><i data-lucide="plus"></i></button>
+</header>
+
+<!-- ─── 统计栏 + 热力图 ─── -->
+<div id="stats-heatmap-section">
+    <div id="stats-heatmap-left">
+        <div id="stats-bar">
+            <span id="stats-total"><i data-lucide="clipboard-list"></i> 总计 0</span>
+            <span id="stats-done"><i data-lucide="check-circle"></i> 已完成 0</span>
+            <span id="stats-pending"><i data-lucide="hourglass"></i> 待完成 0</span>
+            <button id="btn-today-text" class="btn-today-text" title="回到今天">今</button>
+            <span id="stats-timeline"><i data-lucide="git-branch"></i> 时间线</span>
+        </div>
+        <div id="holiday-legend">
+            <span class="legend-label"><i data-lucide="calendar"></i> 节假日</span>
+            <button id="toggle-hk" class="holiday-toggle active" data-region="hk">🇭🇰 中国香港</button>
+            <button id="toggle-mo" class="holiday-toggle" data-region="mo">🇲🇴 中国澳门</button>
+        </div>
+    </div>
+    <div class="heatmap-group">
+        <div id="heatmap"></div>
+    </div>
+</div>
+
+<!-- ─── 日历主体 ─── -->
+<div id="calendar-container">
+    <div id="weekday-header">
+        <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+    </div>
+    <div id="calendar-grid"></div>
+</div>
+
+<!-- ─── 列表视图（Todo 模式） ─── -->
+<div id="list-view" class="hidden">
+    <div id="list-view-header">
+        <span id="list-view-title"></span>
+        <div class="sort-group">
+            <button id="btn-sort-time" class="btn-sort active" title="按时间排序"><i data-lucide="clock"></i> 时间</button>
+            <button id="btn-sort-category" class="btn-sort" title="按类别排序"><i data-lucide="palette"></i> 类别</button>
+        </div>
+    </div>
+    <div id="list-view-events"></div>
+</div>
+
+<!-- ─── 时间线视图（项目视角） ─── -->
+<div id="timeline-view" class="hidden">
+    <div class="timeline-header">
+        <span class="timeline-header-title"><i data-lucide="git-branch"></i> 时间线</span>
+        <span id="timeline-project-count" style="font-size:12px;color:var(--text-secondary);margin-left:auto;"></span>
+    </div>
+    <div id="timeline-events"></div>
+</div>
+
+
+
+<!-- ─── 事件详情面板 ─── -->
+<div id="detail-panel" class="hidden">
+    <div id="detail-header">
+        <h3 id="detail-date-title"></h3>
+        <button id="btn-close-detail" class="icon-btn"><i data-lucide="x"></i></button>
+    </div>
+    <div id="detail-events"></div>
+</div>
+
+<!-- ─── 弹窗遮罩 ─── -->
+<div id="modal-overlay" class="hidden"></div>
+
+<!-- ─── 添加/编辑事件弹窗 ─── -->
+<div id="event-modal" class="modal hidden">
+    <div class="modal-inner">
+    <div class="modal-header">
+        <h3 id="modal-title">新建任务</h3>
+        <button id="btn-close-modal" class="icon-btn"><i data-lucide="x"></i></button>
+    </div>
+    <form id="event-form">
+        <input type="hidden" id="event-id" value="">
+
+        <label for="event-title">任务名称</label>
+        <input type="text" id="event-title" placeholder="输入任务名称..." required autofocus>
+
+        <label for="event-date">截止日期</label>
+        <div class="date-wrapper">
+            <input type="text" id="event-date-display" class="date-display" readonly placeholder="选择日期">
+            <input type="date" id="event-date" required>
+        </div>
+
+        <div class="time-row">
+            <div class="time-field">
+                <label for="event-start">开始</label>
+                <div class="time-wrapper">
+                    <input type="text" id="event-start-display" class="time-display" readonly placeholder="--:--">
+                    <input type="time" id="event-start">
+                </div>
+            </div>
+            <div class="time-field">
+                <label for="event-end">结束</label>
+                <div class="time-wrapper">
+                    <input type="text" id="event-end-display" class="time-display" readonly placeholder="--:--">
+                    <input type="time" id="event-end">
+                </div>
+            </div>
+        </div>
+
+        <label for="event-desc">备注</label>
+        <textarea id="event-desc" rows="2" placeholder="备注信息..."></textarea>
+
+        <label for="event-project">项目索引</label>
+        <div class="project-wrapper">
+            <input type="text" id="event-project" class="project-input" placeholder="输入项目名称..." autocomplete="off">
+            <div id="project-suggestions" class="project-suggestions hidden"></div>
+        </div>
+
+        <label for="event-color">颜色标记</label>
+        <div id="color-picker">
+            <input type="radio" name="color" value="#4A90D9" checked><span style="background:#4A90D9"></span>
+            <input type="radio" name="color" value="#E74C3C"><span style="background:#E74C3C"></span>
+            <input type="radio" name="color" value="#2ECC71"><span style="background:#2ECC71"></span>
+            <input type="radio" name="color" value="#F39C12"><span style="background:#F39C12"></span>
+            <input type="radio" name="color" value="#9B59B6"><span style="background:#9B59B6"></span>
+            <input type="radio" name="color" value="#1ABC9C"><span style="background:#1ABC9C"></span>
+        </div>
+
+        <div class="modal-actions">
+            <button type="button" id="btn-delete-event" class="btn btn-danger hidden">删除</button>
+            <button type="submit" id="btn-save-event" class="btn btn-primary">保存</button>
+        </div>
+    </form>
+    </div>
+</div>
+
+<!-- ─── Toast 提示 ─── -->
+<div id="toast" class="hidden"></div>
+
+<script src="js/api.js"></script>
+<script src="js/holidays.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/animations.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
