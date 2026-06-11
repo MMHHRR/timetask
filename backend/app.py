@@ -184,9 +184,8 @@ def static_files(filename):
 
 # ── 启动 ──────────────────────────────────────────────────
 
-# gunicorn 启动时也初始化数据库
-with app.app_context():
-    init_db()
+# gunicorn 启动时也初始化数据库（init_db 无需 app context）
+init_db()
 
 if __name__ == "__main__":
     print("🚀 TimeTask 启动: http://localhost:5000")
