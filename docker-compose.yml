@@ -1,6 +1,6 @@
 services:
   timetask:
-    image: timetask:latest
+    image: ghcr.io/mmhhrr/timetask:latest
     container_name: timetask
     ports:
       - "5000:5000"
